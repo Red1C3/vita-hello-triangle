@@ -1,10 +1,85 @@
 #include<stdio.h>
+#include<GLES2/gl2.h>
 #include<psp2/kernel/processmgr.h>
 #include<SDL.h>
-#include<SDL_opengl.h>
 #include<SDL_video.h>
+#include<vector>
 #define WIDTH 960
 #define HEIGHT 544
+
+using namespace std;
+
+const char *vertexShaderCode = R"(
+#version 100
+
+attribute vec2 pos;
+attribute vec3 color;
+
+varying vec3 colorOut;
+
+void main(){
+  gl_Position=vec4(pos.xy,0,1);
+  colorOut=color;
+}
+  )";
+
+const char *fragmentShaderCode = R"(
+#version 100
+
+precision lowp float;
+
+varying vec3 colorOut;
+
+void main(){
+  gl_FragColor=vec4(colorOut,1);
+}
+  )";
+
+GLuint loadShaders() {
+  GLuint program;
+  GLuint vertexShader = glCreateShader(GL_VERTEX_SHADER);
+  GLuint fragmentShader = glCreateShader(GL_FRAGMENT_SHADER);
+  GLint vertexShaderSize = strlen(vertexShaderCode);
+  GLint fragmentShaderSize = strlen(fragmentShaderCode);
+  const char *pVertexShaderCode = vertexShaderCode;
+  const char *pFragmentShaderCode = fragmentShaderCode;
+  glShaderSource(vertexShader, 1, &pVertexShaderCode, &vertexShaderSize);
+  glShaderSource(fragmentShader, 1, &pFragmentShaderCode, &fragmentShaderSize);
+  printf("Loaded shaders\n");
+  glCompileShader(vertexShader);
+  glCompileShader(fragmentShader);
+  printf("compiled shaders\n");
+  GLint infoLogLen;
+  glGetShaderiv(vertexShader, GL_INFO_LOG_LENGTH, &infoLogLen);
+  vector<char> infoLog(infoLogLen);
+  glGetShaderInfoLog(vertexShader, infoLog.size(), nullptr, infoLog.data());
+  infoLog.push_back('\0');
+  printf("%s", infoLog.data());
+  infoLog.resize(0);
+  glGetShaderiv(fragmentShader, GL_INFO_LOG_LENGTH, &infoLogLen);
+  infoLog.resize(infoLogLen);
+  glGetShaderInfoLog(fragmentShader, infoLog.size(), nullptr, infoLog.data());
+  infoLog.push_back('\0');
+  printf("%s", infoLog.data());
+  infoLog.resize(0);
+  program = glCreateProgram();
+  glAttachShader(program, vertexShader);
+  glAttachShader(program, fragmentShader);
+  glLinkProgram(program);
+  printf("Linked shaders\n");
+  glGetProgramiv(program, GL_INFO_LOG_LENGTH, &infoLogLen);
+  infoLog.resize(infoLogLen);
+  glGetProgramInfoLog(program, infoLogLen, nullptr, infoLog.data());
+  infoLog.push_back('\0');
+  printf("%s", infoLog.data());
+  //glDetachShader(program, vertexShader);
+  //glDetachShader(program, fragmentShader);
+  //glDeleteShader(vertexShader);
+  //glDeleteShader(fragmentShader);
+
+  return program;
+}
+
 int main() {
   printf("starting up hello-triangle\n");
   if (SDL_Init(SDL_INIT_VIDEO) < 0) {
@@ -32,8 +107,31 @@ int main() {
     sceKernelExitProcess(0);
     return 0;
   }
-  glClearColor(1,0,0,1);
+  printf("Created opengl context successfully\n");
+  glClearColor(0, 0, 0, 1);
   glClear(GL_COLOR_BUFFER_BIT);
+  GLfloat vertexBuffer[] = {0.0f, 0.5f, -0.5, 0.0f, 0.5f, 0.0f, 1.0f, 0.0f,
+                            0.0f, 0.0f, 1.0f, 0.0f, 0.0f, 0.0f, 1.0f};
+  GLuint VBO;
+  glGenBuffers(1, &VBO);
+  glBindBuffer(GL_ARRAY_BUFFER, VBO);
+  glBufferData(GL_ARRAY_BUFFER, 3 * 5 * sizeof(GLfloat), vertexBuffer,
+               GL_STATIC_DRAW);
+  printf("Created VBO\n");
+  GLuint shaderProgram=loadShaders();
+  glUseProgram(shaderProgram);
+  printf("Loaded and using shader\n");
+  GLint posLocation=glGetAttribLocation(shaderProgram,"pos");
+  GLint colorLocation=glGetAttribLocation(shaderProgram,"color");
+  glEnableVertexAttribArray(posLocation);
+  glEnableVertexAttribArray(colorLocation);
+  glVertexAttribPointer(posLocation,2,GL_FLOAT,GL_FALSE,0,0);
+  glVertexAttribPointer(colorLocation,3,GL_FLOAT,GL_FALSE,0,(void*)(2*3*sizeof(GLfloat)));
+  glDrawArrays(GL_TRIANGLES, 0, 3);
+  printf("Finished drawing\n");
+  glDisableVertexAttribArray(posLocation);
+  glDisableVertexAttribArray(colorLocation);
+  printf("Opengl err code %i \n",glGetError());
   SDL_GL_SwapWindow(window);
   SDL_Delay(4000);
   SDL_DestroyWindow(window);
