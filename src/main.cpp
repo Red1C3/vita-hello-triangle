@@ -120,7 +120,7 @@ int main() {
   glBufferData(GL_ARRAY_BUFFER, 3 * 5 * sizeof(GLfloat), vertexBuffer,
                GL_STATIC_DRAW);
   printf("Created VBO\n");
-  GLuint shaderProgram=loadShaders("app0:vertex.vert","app0:fragment.frag");
+  GLuint shaderProgram=loadShaders("app0:shaders/vertex.vert","app0:shaders/fragment.frag");
   glUseProgram(shaderProgram);
   printf("Loaded and using shader\n");
   GLint posLocation=glGetAttribLocation(shaderProgram,"pos");
