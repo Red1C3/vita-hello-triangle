@@ -4,6 +4,7 @@
 #include<SDL.h>
 #include<SDL_video.h>
 #include<vector>
+#include <SDL_events.h>
 #include<fstream>
 #define WIDTH 960
 #define HEIGHT 544
@@ -124,7 +125,16 @@ int main() {
   glDisableVertexAttribArray(colorLocation);
   printf("Opengl err code %i \n",glGetError());
   SDL_GL_SwapWindow(window);
-  SDL_Delay(4000);
+  while(true){
+    SDL_Event evt;
+    SDL_PollEvent(&evt);
+    if(evt.type==SDL_KEYUP && evt.key.keysym.scancode==SDL_SCANCODE_Q){
+      break;
+    }
+    if(evt.type==SDL_JOYBUTTONDOWN){
+      break;
+    }
+  }
   SDL_DestroyWindow(window);
   SDL_Quit();
   sceKernelExitProcess(0);
