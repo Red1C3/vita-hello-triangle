@@ -4,45 +4,35 @@
 #include<SDL.h>
 #include<SDL_video.h>
 #include<vector>
+#include<fstream>
 #define WIDTH 960
 #define HEIGHT 544
 
 using namespace std;
 
-const char *vertexShaderCode = R"(
-#version 100
-
-attribute vec2 pos;
-attribute vec3 color;
-
-varying vec3 colorOut;
-
-void main(){
-  gl_Position=vec4(pos.xy,0,1);
-  colorOut=color;
+vector<char> readBinFile(const char* path){
+    vector<char> data;
+    fstream fileStream(path, ios::binary | ios::ate | ios::in);
+    if(!fileStream.is_open()){
+        printf("Failed to open file at %s", path);
+    }
+    data.resize(fileStream.tellg());
+    fileStream.seekg(0, ios::beg);
+    fileStream.read(data.data(), data.size());
+    fileStream.flush();
+    fileStream.close();
+    return data;
 }
-  )";
-
-const char *fragmentShaderCode = R"(
-#version 100
-
-precision lowp float;
-
-varying vec3 colorOut;
-
-void main(){
-  gl_FragColor=vec4(colorOut,1);
-}
-  )";
-
-GLuint loadShaders() {
+GLuint loadShaders(const char* vertexShaderPath,const char* fragmentShaderPath) {
   GLuint program;
+  vector<char> vertexShaderCode = readBinFile(vertexShaderPath);
+  vector<char> fragmentShaderCode = readBinFile(fragmentShaderPath);
   GLuint vertexShader = glCreateShader(GL_VERTEX_SHADER);
   GLuint fragmentShader = glCreateShader(GL_FRAGMENT_SHADER);
-  GLint vertexShaderSize = strlen(vertexShaderCode);
-  GLint fragmentShaderSize = strlen(fragmentShaderCode);
-  const char *pVertexShaderCode = vertexShaderCode;
-  const char *pFragmentShaderCode = fragmentShaderCode;
+  GLint vertexShaderSize = vertexShaderCode.size();
+  GLint fragmentShaderSize = fragmentShaderCode.size();
+  char *pVertexShaderCode = vertexShaderCode.data();
+  char *pFragmentShaderCode = fragmentShaderCode.data();
   glShaderSource(vertexShader, 1, &pVertexShaderCode, &vertexShaderSize);
   glShaderSource(fragmentShader, 1, &pFragmentShaderCode, &fragmentShaderSize);
   printf("Loaded shaders\n");
@@ -118,15 +108,16 @@ int main() {
   glBufferData(GL_ARRAY_BUFFER, 3 * 5 * sizeof(GLfloat), vertexBuffer,
                GL_STATIC_DRAW);
   printf("Created VBO\n");
-  GLuint shaderProgram=loadShaders();
+  GLuint shaderProgram=loadShaders("app0:vertex.vert","app0:fragment.frag");
   glUseProgram(shaderProgram);
   printf("Loaded and using shader\n");
   GLint posLocation=glGetAttribLocation(shaderProgram,"pos");
   GLint colorLocation=glGetAttribLocation(shaderProgram,"color");
   glEnableVertexAttribArray(posLocation);
   glEnableVertexAttribArray(colorLocation);
-  glVertexAttribPointer(posLocation,2,GL_FLOAT,GL_FALSE,0,0);
-  glVertexAttribPointer(colorLocation,3,GL_FLOAT,GL_FALSE,0,(void*)(2*3*sizeof(GLfloat)));
+  glVertexAttribPointer(posLocation, 2, GL_FLOAT, GL_FALSE, 0, 0);
+  glVertexAttribPointer(colorLocation, 3, GL_FLOAT, GL_FALSE, 0,
+                        (void *)(2 * 3 * sizeof(GLfloat)));
   glDrawArrays(GL_TRIANGLES, 0, 3);
   printf("Finished drawing\n");
   glDisableVertexAttribArray(posLocation);
