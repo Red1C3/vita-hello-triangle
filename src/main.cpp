@@ -1,3 +1,4 @@
+#include <SDL_joystick.h>
 #include<stdio.h>
 #include<GLES2/gl2.h>
 #include<psp2/kernel/processmgr.h>
@@ -73,11 +74,21 @@ GLuint loadShaders(const char* vertexShaderPath,const char* fragmentShaderPath) 
 
 int main() {
   printf("starting up hello-triangle\n");
-  if (SDL_Init(SDL_INIT_VIDEO) < 0) {
+  if (SDL_Init(SDL_INIT_VIDEO| SDL_INIT_JOYSTICK) < 0) {
     printf("Failed to init SDL, err:%s\n",SDL_GetError());
     sceKernelExitProcess(0);
     return 0;
   }
+
+  SDL_Joystick* joystick;
+
+  if(SDL_NumJoysticks()>0){
+    joystick=SDL_JoystickOpen(0);
+  }else{
+    printf("Failed to find joystick\n");
+  }
+
+  
   SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 2);
   SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 0);
   SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_ES);
