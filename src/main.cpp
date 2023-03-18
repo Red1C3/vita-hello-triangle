@@ -15,9 +15,6 @@ using namespace std;
 vector<char> readBinFile(const char* path){
     vector<char> data;
     fstream fileStream(path, ios::binary | ios::ate | ios::in);
-    if(!fileStream.is_open()){
-        printf("Failed to open file at %s", path);
-    }
     data.resize(fileStream.tellg());
     fileStream.seekg(0, ios::beg);
     fileStream.read(data.data(), data.size());
@@ -41,33 +38,13 @@ GLuint loadShaders(const char* vertexShaderPath,const char* fragmentShaderPath) 
   glCompileShader(vertexShader);
   glCompileShader(fragmentShader);
   printf("compiled shaders\n");
-  GLint infoLogLen;
-  glGetShaderiv(vertexShader, GL_INFO_LOG_LENGTH, &infoLogLen);
-  vector<char> infoLog(infoLogLen);
-  glGetShaderInfoLog(vertexShader, infoLog.size(), nullptr, infoLog.data());
-  infoLog.push_back('\0');
-  printf("%s", infoLog.data());
-  infoLog.resize(0);
-  glGetShaderiv(fragmentShader, GL_INFO_LOG_LENGTH, &infoLogLen);
-  infoLog.resize(infoLogLen);
-  glGetShaderInfoLog(fragmentShader, infoLog.size(), nullptr, infoLog.data());
-  infoLog.push_back('\0');
-  printf("%s", infoLog.data());
-  infoLog.resize(0);
   program = glCreateProgram();
   glAttachShader(program, vertexShader);
   glAttachShader(program, fragmentShader);
   glLinkProgram(program);
   printf("Linked shaders\n");
-  glGetProgramiv(program, GL_INFO_LOG_LENGTH, &infoLogLen);
-  infoLog.resize(infoLogLen);
-  glGetProgramInfoLog(program, infoLogLen, nullptr, infoLog.data());
-  infoLog.push_back('\0');
-  printf("%s", infoLog.data());
-  //glDetachShader(program, vertexShader);
-  //glDetachShader(program, fragmentShader);
-  //glDeleteShader(vertexShader);
-  //glDeleteShader(fragmentShader);
+  glDeleteShader(vertexShader);
+  glDeleteShader(fragmentShader);
 
   return program;
 }
@@ -86,6 +63,9 @@ int main() {
     joystick=SDL_JoystickOpen(0);
   }else{
     printf("Failed to find joystick\n");
+    SDL_Quit();
+    sceKernelExitProcess(0);
+    return 0;
   }
 
   
@@ -139,9 +119,6 @@ int main() {
   while(true){
     SDL_Event evt;
     SDL_PollEvent(&evt);
-    if(evt.type==SDL_KEYUP && evt.key.keysym.scancode==SDL_SCANCODE_Q){
-      break;
-    }
     if(evt.type==SDL_JOYBUTTONDOWN){
       break;
     }
