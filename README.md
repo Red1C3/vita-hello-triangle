@@ -21,7 +21,7 @@ cd build
 cmake ..
 make
 ```
-Then install the resultant ```./build/vita-hello-triangle``` using vitaShell.
+Then install the resultant ```./build/vita-hello-triangle.vpk``` using vitaShell.
 
 ## License
 [Unlicense](./LICENSE)
